@@ -1,0 +1,36 @@
+
+export type PageId = 'home' | 'sobre' | 'utopia' | 'contribua' | 'mapa';
+
+export type ElementType = 'image' | 'text' | 'video';
+
+export interface ElementData {
+  id: string;
+  type: ElementType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  content: string; // URL/Base64 para mídia, ou texto puro
+  link?: string;   // Destino (URL externa ou ID de página interna)
+  fontSize?: number;
+  zIndex: number;
+}
+
+export interface PageSettings {
+  background: string;
+  bgType: 'color' | 'image';
+  elements: ElementData[];
+}
+
+export type AppState = Record<PageId, PageSettings>;
+
+export const INITIAL_PAGES: PageId[] = ['home', 'sobre', 'utopia', 'contribua', 'mapa'];
+
+export const PAGE_LABELS: Record<PageId, string> = {
+  home: 'Início',
+  sobre: 'Sobre',
+  utopia: 'Utopia Urbana',
+  contribua: 'Participar',
+  mapa: 'Mapa Interativo'
+};

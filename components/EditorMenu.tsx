@@ -19,7 +19,7 @@ const EditorMenu: React.FC<EditorMenuProps> = ({
   const [applyToAll, setApplyToAll] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Função Crítica: Comprime e redimensiona para evitar Out of Memory
+  // Função Otimizada: Agora usa PNG para manter transparência, mas mantém 1200px para evitar OOM
   const processImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -32,7 +32,7 @@ const EditorMenu: React.FC<EditorMenuProps> = ({
           let width = img.width;
           let height = img.height;
 
-          // Limite de 1200px para manter performance
+          // Limite de 1200px para manter performance e evitar estouro de memória (Base64 strings)
           const MAX_SIZE = 1200;
           if (width > height) {
             if (width > MAX_SIZE) {
@@ -49,10 +49,13 @@ const EditorMenu: React.FC<EditorMenuProps> = ({
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
+          
+          // Garante que o canvas esteja limpo/transparente antes de desenhar
+          ctx?.clearRect(0, 0, width, height);
           ctx?.drawImage(img, 0, 0, width, height);
           
-          // Converte para JPEG com 0.7 de qualidade (Reduz ~90% do tamanho original)
-          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          // Alterado para image/png para preservar transparência (resolve o fundo preto)
+          const compressed = canvas.toDataURL('image/png');
           resolve(compressed);
         };
       };

@@ -11,8 +11,8 @@ export interface ElementData {
   width: number;
   height: number;
   rotation: number;
-  content: string; // URL/Base64 para mídia, ou texto puro
-  link?: string;   // Destino (URL externa ou ID de página interna)
+  content: string; // URL/Base64 para imagem/vídeo, Texto para box
+  link?: string;
   fontSize?: number;
   zIndex: number;
 }
@@ -28,9 +28,9 @@ export type AppState = Record<PageId, PageSettings>;
 export const INITIAL_PAGES: PageId[] = ['home', 'sobre', 'utopia', 'contribua', 'mapa'];
 
 export const PAGE_LABELS: Record<PageId, string> = {
-  home: 'Início',
+  home: 'Home',
   sobre: 'Sobre',
   utopia: 'Utopia Urbana',
-  contribua: 'Participar',
-  mapa: 'Mapa Interativo'
+  contribua: 'Contribua',
+  mapa: 'Mapa'
 };

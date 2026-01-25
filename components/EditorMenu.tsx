@@ -19,6 +19,46 @@ const EditorMenu: React.FC<EditorMenuProps> = ({
   const [applyToAll, setApplyToAll] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Função Crítica: Comprime e redimensiona para evitar Out of Memory
+  const processImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Limite de 1200px para manter performance
+          const MAX_SIZE = 1200;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Converte para JPEG com 0.7 de qualidade (Reduz ~90% do tamanho original)
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressed);
+        };
+      };
+    });
+  };
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -33,10 +73,10 @@ const EditorMenu: React.FC<EditorMenuProps> = ({
     if (files && files.length > 0) {
       setIsProcessing(true);
       try {
-        const base64s = await Promise.all(
-          Array.from(files).map((file: File) => fileToBase64(file))
+        const processedImages = await Promise.all(
+          Array.from(files).map((file: File) => processImage(file))
         );
-        onAddImages(base64s);
+        onAddImages(processedImages);
       } catch (error) {
         console.error("Erro ao processar imagens:", error);
       } finally {
@@ -69,8 +109,8 @@ const EditorMenu: React.FC<EditorMenuProps> = ({
     if (file) {
       setIsProcessing(true);
       try {
-        const base64 = await fileToBase64(file);
-        onUpdateBackground(base64, 'image', applyToAll);
+        const compressedBg = await processImage(file);
+        onUpdateBackground(compressedBg, 'image', applyToAll);
       } catch (error) {
         console.error("Erro ao processar fundo:", error);
       } finally {

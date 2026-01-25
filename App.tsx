@@ -10,7 +10,8 @@ import { storage } from './storage';
 const DEFAULT_PAGE: PageSettings = { background: '#ffffff', bgType: 'color', elements: [] };
 const INITIAL_STATE: AppState = INITIAL_PAGES.reduce((acc, p) => ({ ...acc, [p]: { ...DEFAULT_PAGE } }), {} as AppState);
 
-const MAX_HISTORY = 30;
+// Reduzido para 10 para economizar memória (OOM prevention)
+const MAX_HISTORY = 10;
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState | null>(null);
@@ -25,7 +26,7 @@ const App: React.FC = () => {
   const lastSavedRef = useRef<string>("");
 
   const syncToDisk = useCallback(async (data: AppState) => {
-    if (!isHydrated) return; // NUNCA salva antes de carregar o que já existe
+    if (!isHydrated) return; 
     const dataStr = JSON.stringify(data);
     if (dataStr === lastSavedRef.current) return;
     
@@ -43,26 +44,26 @@ const App: React.FC = () => {
 
   const pushToHistory = useCallback((newState: AppState) => {
     setHistory(prev => {
+      // Cria uma cópia rasa do histórico e apenas do estado atual para poupar memória
       const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push(JSON.parse(JSON.stringify(newState)));
+      newHistory.push({ ...newState }); 
       if (newHistory.length > MAX_HISTORY) newHistory.shift();
       return newHistory;
     });
     setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
   }, [historyIndex]);
 
-  // CARREGAMENTO ÚNICO E SEGURO
   useEffect(() => {
     const bootstrap = async () => {
       try {
         const saved = await storage.load();
         if (saved && Object.keys(saved).length > 0) {
           setState(saved);
-          setHistory([JSON.parse(JSON.stringify(saved))]);
+          setHistory([saved]);
           lastSavedRef.current = JSON.stringify(saved);
         } else {
           setState(INITIAL_STATE);
-          setHistory([JSON.parse(JSON.stringify(INITIAL_STATE))]);
+          setHistory([INITIAL_STATE]);
           lastSavedRef.current = JSON.stringify(INITIAL_STATE);
         }
         setHistoryIndex(0);
@@ -77,10 +78,10 @@ const App: React.FC = () => {
     bootstrap();
   }, []);
 
-  // AUTO-SALVAMENTO DEBIILITADO (SÓ DEPOIS DE CARREGAR)
   useEffect(() => {
     if (!isHydrated || !state) return;
-    const timer = setTimeout(() => syncToDisk(state), 1000);
+    // Debounce maior para salvamento de dados pesados
+    const timer = setTimeout(() => syncToDisk(state), 2000);
     return () => clearTimeout(timer);
   }, [state, isHydrated, syncToDisk]);
 
@@ -186,7 +187,7 @@ const App: React.FC = () => {
       <Loader2 className="animate-spin text-blue-500 mb-6" size={56} />
       <div className="flex items-center gap-3 mb-2">
         <ShieldCheck className="text-emerald-400" size={24} />
-        <h2 className="font-black text-2xl tracking-tighter uppercase">Proteção Ativada</h2>
+        <h2 className="font-black text-2xl tracking-tighter uppercase">Memória Otimizada</h2>
       </div>
       <p className="text-slate-500 text-[10px] font-bold tracking-[0.4em] uppercase animate-pulse">Sincronizando Banco de Dados...</p>
     </div>
